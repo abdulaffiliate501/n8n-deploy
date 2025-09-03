@@ -1,0 +1,706 @@
+{
+  "name": "backend",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        368
+      ],
+      "id": "384c7bcd-7822-4df3-9b6d-b056bfbd591c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "42yrahx45XLtYdSS",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        224
+      ],
+      "id": "5d68c7fa-8a7c-4a59-9d89-1587116215bd",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json[\"message\"] }}",
+        "options": {
+          "systemMessage": "=🔹 Identity & Role\nYou are AutoMate, the official AI assistant of AI Hub, a premier AI Automation Agency. You are a knowledge-grounded RAG agent that answers strictly using the AI Hub Knowledge Base (KB) via the Pinecone Vector Store tool.\n\n🔹Universal Language Rule\n\nAlways reply in the same script and language style as the user’s last message.\n\nNever auto-translate or switch script.\n\nRoman Urdu → reply in Roman Urdu (never in Hindi/Urdu script).(e.g. user: mujhe apki madad chahiye \nyou : g ai hub apki kya madad kr skta hai)\n\nEnglish → reply in English.\n\nUrdu script → reply in Urdu script.\n\nFor any other world language or script, reply in that same language/script exactly as written.\n\n🔹 Knowledge Limitation\nUse ONLY facts from the KB (via the Pinecone Vector Store tool). If the KB doesn’t contain the answer, reply exactly: \"I don't have that info, but I can tell you how we help businesses with AI-powered automation.\"\n\n🔹 Modes\n1) Chat Mode (RAG):\n- Use the Pinecone Vector Store tool to retrieve relevant context and answer strictly from the KB.\n- If unknown from KB, use the fallback sentence above.\n- Present AI Hub as a full-service AI partner that can solve any business problem with automation and AI.\n\n🔹Conciseness\nAlways reply in 1–2 short, professional sentences.\n\n🔹Company Info\nIf KB has details about location, social links, or history, answer directly.\n\n🔹Services & Capabilities\nPresent AI Hub as a full-service AI partner that can solve any business problem with automation and AI solutions.\n\n\n🔹 Response Style\nTone: Friendly, clear, and professional.\nStyle: Short, direct, user-friendly (max 2 sentences).\nFocus: Highlight solutions and confidence — AI Hub can handle any automation or AI challenge.\n\n🔹 Multi-Step Contact Collection\n\nWhen a user wants to provide contact information, you MUST collect ALL these fields through a conversation:\n\n1. First ask for: Name and Email\n2. Then ask for: Company Name\n3. Then ask for: What services are you interested in?\n4. Then ask for: What's your timeline for this project?\n5. Then ask for: What's your estimated budget?\n6. Finally ask for: Any additional message or details?\n\n🔹 STRICT JSON FORMATTING RULE\n\nWhen returning JSON, you MUST return ONLY the pure JSON object with NO additional text, NO markdown formatting, NO code blocks, and NO explanations.\n\n✅ CORRECT: {\"intent\": \"contact_form\", \"name\": \"John\", \"email\": \"john@example.com\", ...}\n\n❌ WRONG: ```json {\"intent\": \"contact_form\", ...} ```\n❌ WRONG: Here's the JSON: {\"intent\": \"contact_form\", ...}\n❌ WRONG: {\"intent\": \"contact_form\", ...} (as a code block)\n\nAny markdown formatting will break the system!\n\n🔹 Contact Form JSON Format\n\nWhen all information is collected, return ONLY this pure JSON format to email send tool (no markdown, no extra text):\n\n{\n  \"intent\": \"contact_form\",\n  \"name\": \"Full Name\",\n  \"email\": \"Email Address\",\n  \"company\": \"Company Name\",\n  \"services\": \"Requested Services\",\n  \"timeline\": \"Timeline\",\n  \"budget\": \"Budget\",\n  \"message\": \"Custom message\"\n}\n\nwhen this message is completed send this output from orchestrator to send email tool and say user that thanks we have sent you email and our team will contact you soon,strictly not send such message in chatbot.\n\n🔹 Request Type Handling\n\nIf the request type is \"contact_form\", process it as a direct contact form submission.\nIf the request type is \"chat\" or unspecified, process it as a chat message.\n\n🔹 Contact Form Processing\nWhen type is \"contact_form\", simply validate the data and pass it through.\n\n🔹 Direct Form Submission Handling\n\nIf the request has isDirectForm=true, this means it's a direct contact form submission (not from chatbot conversation). \n\nFor direct form submissions:\n1. Validate that all required fields are present\n2. Return the contact form JSON immediately without conversation\n3. Do not engage in dialogue - just process and return the data\n\nExample direct form processing:\nInput: {..., \"isDirectForm\": true, \"name\": \"John\", \"email\": \"john@example.com\", ...}\nOutput: {\"intent\": \"contact_form\", \"name\": \"John\", \"email\": \"john@example.com\", ...}\n\n🔹 Example Multi-Step Conversations\n\nUser: \"I want to contact you\"\nAgent: \"I'd be happy to help! Could you please provide your name and email address?\"\n\nUser: \"My name is John Doe and email is john@example.com\"\nAgent: \"Thanks John! What's your company name?\"\n\nUser: \"ABC Corp\"\nAgent: \"Great! What services are you interested in?\"\n\nUser: \"AI automation\"\nAgent: \"What's your timeline for this project?\"\n\nUser: \"2-3 months\"\nAgent: \"What's your estimated budget?\"\n\nUser: \"$10k-20k\"\nAgent: \"Finally, any additional message or details?\"\n\nUser: \"We need a custom solution\"\nAgent: {\"intent\": \"contact_form\", \"name\": \"John Doe\", \"email\": \"john@example.com\", \"company\": \"ABC Corp\", \"services\": \"AI automation\", \"timeline\": \"2-3 months\", \"budget\": \"$10k-20k\", \"message\": \"We need a custom solution\"}\n\nUser: \"I want to schedule a consultation\"\nAgent: \"I'd be happy to help you schedule a consultation. Could you please provide your name and email address?\"\n\nUser: \"My name is John Doe and my email is john@example.com\"\nAgent: \"Thank you! May I ask which company you're with?\"\n\nUser: \"Tech Solutions Inc.\"\nAgent: \"What type of services are you interested in?\"\n\nUser: \"AI-powered analytics\"\nAgent: \"What's your expected timeline for this project?\"\n\nUser: \"Within 3 months\"\nAgent: \"Do you have an estimated budget range in mind?\"\n\nUser: \"$15,000-20,000\"\nAgent: \"Any additional details about your project you'd like to share?\"\n\nUser: \"We need help with customer data analysis\"\nAgent: {\"intent\": \"contact_form\", \"name\": \"John Doe\", \"email\": \"john@example.com\", \"company\": \"Tech Solutions Inc.\", \"services\": \"AI-powered analytics\", \"timeline\": \"Within 3 months\", \"budget\": \"$15,000-20,000\", \"message\": \"We need help with customer data analysis\"}\n\n🔹 Regular Chat Examples\n\nUser: \"What does AI Hub do?\"\nAgent: \"AI Hub helps businesses automate and optimize processes with AI — from WhatsApp bots to full custom AI solutions.\"\n\nUser: \"Where are you located?\"\nAgent: \"AI Hub is located in [City/Country].\"\n\nUser: \"What services do you offer?\"\nAgent: \"We provide AI-driven strategy, custom AI models, intelligent automation, AI-powered analytics, and multiple service combinations.\"\n\n🔹 Error Handling\n\nIf user provides incomplete information, politely ask for the missing details.\nIf user changes topic mid-conversation, gracefully return to chat mode.\nAlways maintain conversation context until all contact details are collected or user changes topic."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "15d5905c-67e3-4bff-8c16-cc7c919c3027",
+      "name": "ORCHESTRATOR"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "grab ai hub data from pinecone database",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "ai-hubb",
+          "mode": "list",
+          "cachedResultName": "ai-hubb"
+        },
+        "useReranker": true,
+        "options": {
+          "pineconeNamespace": "aihub-info"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        320
+      ],
+      "id": "da276ece-d1e8-4e63-b7de-59876b9f966a",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "YJAYHVtednaiEL2T",
+          "name": "PineconeApi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "batchSize": 1024
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        656,
+        496
+      ],
+      "id": "9c0b6332-85e8-4e9d-bdf1-44e812ebad0b",
+      "name": "Embeddings Mistral Cloud1",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "AST1XV7QZnzEj54e",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+      "typeVersion": 1,
+      "position": [
+        816,
+        496
+      ],
+      "id": "69772c5c-636c-4ef7-809b-9ed7d5f641cc",
+      "name": "Reranker Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "9yEKxlt0hFLNH0iW",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "950907f0-753c-4bfc-a45a-cd7144e3a2b9",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -512,
+        544
+      ],
+      "id": "e0314a66-6d64-4840-9b53-1651b6ec3b0f",
+      "name": "Assistant",
+      "webhookId": "950907f0-753c-4bfc-a45a-cd7144e3a2b9"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"reply\": \"Thank you! We've received your details and our team will contact you soon.\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        1344
+      ],
+      "id": "bb538af0-62c2-43f5-93b5-58617326bfd6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        1136
+      ],
+      "id": "d1ac5a74-64c8-479b-8894-d0dc65f1f064",
+      "name": "Router"
+    },
+    {
+      "parameters": {
+        "fromEmail": "sabdulrehmangulshan@gmail.com",
+        "toEmail": "={{ $json[\"body\"]?.email || $json[\"email\"] || (JSON.parse($json[\"reply\"] || \"{}\").email) }}",
+        "subject": "=Thank you for contacting AI Hub!",
+        "html": "=<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n    <title>Thank You | AI Hub</title>\n    <style>\n      body {\n        font-family: 'Segoe UI', Tahoma, sans-serif;\n        background-color: #f3f4f6;\n        margin: 0;\n        padding: 0;\n        color: #374151;\n      }\n      .container {\n        max-width: 650px;\n        margin: 40px auto;\n        background: #ffffff;\n        border-radius: 16px;\n        box-shadow: 0 6px 20px rgba(0,0,0,0.08);\n        overflow: hidden;\n        animation: fadeIn 1.2s ease-in-out;\n      }\n      .header {\n        background: linear-gradient(135deg, #2563eb, #3b82f6);\n        color: #ffffff;\n        padding: 30px;\n        text-align: center;\n      }\n      .header h1 {\n        margin: 0;\n        font-size: 26px;\n        font-weight: 600;\n      }\n      .content {\n        padding: 25px 35px;\n      }\n      h2 {\n        color: #1e3a8a;\n        margin-top: 0;\n        font-size: 22px;\n      }\n      p {\n        margin: 12px 0;\n        font-size: 15px;\n      }\n      .details {\n        background: #f9fafb;\n        padding: 18px;\n        border-left: 4px solid #2563eb;\n        border-radius: 10px;\n        margin: 20px 0;\n      }\n      .details p {\n        margin: 8px 0;\n        font-size: 14px;\n      }\n      strong {\n        color: #111827;\n      }\n      .button {\n        display: inline-block;\n        background: linear-gradient(135deg, #2563eb, #3b82f6);\n        color: #ffffff;\n        text-decoration: none;\n        padding: 12px 25px;\n        border-radius: 30px;\n        font-weight: 500;\n        transition: all 0.3s ease;\n        margin-top: 20px;\n      }\n      .button:hover {\n        background: linear-gradient(135deg, #1d4ed8, #2563eb);\n        transform: translateY(-2px);\n        box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);\n      }\n      .footer {\n        background: #f9fafb;\n        padding: 15px;\n        text-align: center;\n        font-size: 13px;\n        color: #6b7280;\n      }\n      @keyframes fadeIn {\n        from {opacity: 0; transform: translateY(10px);}\n        to {opacity: 1; transform: translateY(0);}\n      }\n    </style>\n  </head>\n  <body>\n    <div class=\"container\">\n      <!-- Header -->\n      <div class=\"header\">\n        <h1>🤖 Thank You for Contacting AI Hub</h1>\n      </div>\n\n      <!-- Content -->\n      <div class=\"content\">\n        <h2>\n          Hi {{ $json[\"body\"]?.name || $json[\"name\"] || (JSON.parse($json[\"reply\"] || \"{}\").name) }},\n        </h2>\n        <p>\n          We’re excited to connect with you! 🎉  \n          Your request has been received, and one of our AI experts will reach out shortly.\n        </p>\n\n        <p>Here’s a summary of your submission:</p>\n        <div class=\"details\">\n          <p><strong>🏢 Company:</strong> {{ $json[\"body\"]?.company || $json[\"company\"] || (JSON.parse($json[\"reply\"] || \"{}\").company) }}</p>\n          <p><strong>⚙️ Services:</strong> {{ $json[\"body\"]?.services || $json[\"services\"] || (JSON.parse($json[\"reply\"] || \"{}\").services) }}</p>\n          <p><strong>⏳ Timeline:</strong> {{ $json[\"body\"]?.timeline || $json[\"timeline\"] || (JSON.parse($json[\"reply\"] || \"{}\").timeline) }}</p>\n          <p><strong>💰 Budget:</strong> {{ $json[\"body\"]?.budget || $json[\"budget\"] || (JSON.parse($json[\"reply\"] || \"{}\").budget) }}</p>\n          <p><strong>📝 Message:</strong> {{ $json[\"body\"]?.message || $json[\"message\"] || (JSON.parse($json[\"reply\"] || \"{}\").message) }}</p>\n        </div>\n\n        <p>\n          Meanwhile, feel free to explore our website and discover how AI Hub can help accelerate your business with cutting-edge AI solutions.\n        </p>\n\n        <a href=\"https://yourwebsite.com\" class=\"button\">🌐 Visit Our Website</a>\n\n        <p style=\"margin-top:25px;\">Best regards,<br><b>AI Hub Team</b></p>\n      </div>\n\n      <!-- Footer -->\n      <div class=\"footer\">\n        <p>AI Hub | Your Trusted AI Solutions Partner</p>\n        <p>If you didn’t submit this request, please ignore this email.</p>\n      </div>\n    </div>\n  </body>\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        992
+      ],
+      "id": "c39930ad-0f1a-495e-bfa4-b61c75ef4ee3",
+      "name": "Send email3",
+      "webhookId": "277fe192-eba7-4fdd-8be5-6a97de3d11ea",
+      "credentials": {
+        "smtp": {
+          "id": "n2dOsLQgCpgCmD5q",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "sabdulrehmangulshan@gmail.com",
+        "toEmail": "=sabdulrehmangulshan@gmail.com",
+        "subject": "=New Message from {{ $json[\"body\"]?.name || $json[\"name\"] || (JSON.parse($json[\"reply\"] || \"{}\").name) }} - {{ $now.toLocaleString() }}",
+        "html": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <title>New Contact Form Submission</title>\n</head>\n<body style=\"margin:0; padding:0; font-family: 'Arial', sans-serif; background-color:#f5f6fa;\">\n  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#f5f6fa; padding: 40px 0;\">\n    <tr>\n      <td align=\"center\">\n        <table width=\"620\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.08);\">\n          \n          <!-- Header -->\n          <tr>\n            <td style=\"background:linear-gradient(135deg,#4f46e5,#6366f1); color:#ffffff; text-align:center; padding: 35px 20px;\">\n              <h1 style=\"margin:0; font-size:26px; font-weight:600;\">📩 New Contact Form Submission</h1>\n            </td>\n          </tr>\n\n          <!-- Body -->\n          <tr>\n            <td style=\"padding: 35px 28px; color:#333333; font-size:15px; line-height:1.6;\">\n              <p style=\"margin:0 0 10px;\">Hello <strong>AI Hub Team</strong>,</p>\n              <p style=\"margin:0 0 18px;\">You’ve received a new contact form submission. 🚀 Here are the details:</p>\n\n              <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:15px; border-collapse: collapse; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;\">\n                <tr style=\"background-color:#f9fafb;\">\n                  <td style=\"padding:12px; font-weight:bold; width:190px;\">🙍 Customer Name:</td>\n                  <td style=\"padding:12px;\">{{ $json[\"body\"]?.name || $json[\"name\"] || (JSON.parse($json[\"reply\"] || \"{}\").name) }}</td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px; font-weight:bold;\">📧 Customer Email:</td>\n                  <td style=\"padding:12px;\">{{ $json[\"body\"]?.email || $json[\"email\"] || (JSON.parse($json[\"reply\"] || \"{}\").email) }}</td>\n                </tr>\n                <tr style=\"background-color:#f9fafb;\">\n                  <td style=\"padding:12px; font-weight:bold;\">🏢 Company:</td>\n                  <td style=\"padding:12px;\">{{ $json[\"body\"]?.company || $json[\"company\"] || (JSON.parse($json[\"reply\"] || \"{}\").company) }}</td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px; font-weight:bold;\">⚙️ Services:</td>\n                  <td style=\"padding:12px;\">{{ $json[\"body\"]?.services || $json[\"services\"] || (JSON.parse($json[\"reply\"] || \"{}\").services) }}</td>\n                </tr>\n                <tr style=\"background-color:#f9fafb;\">\n                  <td style=\"padding:12px; font-weight:bold;\">⏳ Timeline:</td>\n                  <td style=\"padding:12px;\">{{ $json[\"body\"]?.timeline || $json[\"timeline\"] || (JSON.parse($json[\"reply\"] || \"{}\").timeline) }}</td>\n                </tr>\n                <tr>\n                  <td style=\"padding:12px; font-weight:bold;\">💰 Budget:</td>\n                  <td style=\"padding:12px;\">{{ $json[\"body\"]?.budget || $json[\"budget\"] || (JSON.parse($json[\"reply\"] || \"{}\").budget) }}</td>\n                </tr>\n                <tr style=\"background-color:#f9fafb;\">\n                  <td style=\"padding:12px; font-weight:bold; vertical-align:top;\">📝 Message:</td>\n                  <td style=\"padding:12px;\">{{ $json[\"body\"]?.message || $json[\"message\"] || (JSON.parse($json[\"reply\"] || \"{}\").message) }}</td>\n                </tr>\n              </table>\n\n              <p style=\"margin-top:25px;\">Best regards,<br><strong>AI Hub Team</strong></p>\n            </td>\n          </tr>\n\n          <!-- Footer -->\n          <tr>\n            <td style=\"background-color:#f9fafb; color:#6b7280; text-align:center; padding:18px; font-size:12px;\">\n              &copy; {{ $now.toFormat(\"yyyy\") }} AI Hub. All rights reserved.\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        1152
+      ],
+      "id": "e66cd196-e584-4f2e-af83-aa59d5a564d1",
+      "name": "Send email2",
+      "webhookId": "ef638afe-4dad-4add-9700-88713d29c20b",
+      "credentials": {
+        "smtp": {
+          "id": "n2dOsLQgCpgCmD5q",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1pKmz4UrYef34UzuW_cLQ3nQaiXn-bgkwmw3o5fGL0YU",
+          "mode": "list",
+          "cachedResultName": "Webhook Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pKmz4UrYef34UzuW_cLQ3nQaiXn-bgkwmw3o5fGL0YU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1pKmz4UrYef34UzuW_cLQ3nQaiXn-bgkwmw3o5fGL0YU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json[\"body\"]?.name || $json[\"name\"] || (JSON.parse($json[\"reply\"] || \"{}\").name) }}\n",
+            "email": "={{ $json[\"body\"]?.email || $json[\"email\"] || (JSON.parse($json[\"reply\"] || \"{}\").email) }}",
+            "company": "={{ $json[\"body\"]?.company || $json[\"company\"] || (JSON.parse($json[\"reply\"] || \"{}\").company) }}",
+            "message": "={{ $json[\"body\"]?.message || $json[\"message\"] || (JSON.parse($json[\"reply\"] || \"{}\").message) }}",
+            "services": "={{ $json[\"body\"]?.services || $json[\"services\"] || (JSON.parse($json[\"reply\"] || \"{}\").services) }}",
+            "timeline": "={{ $json[\"body\"]?.timeline || $json[\"timeline\"] || (JSON.parse($json[\"reply\"] || \"{}\").timeline) }}",
+            "budget": "={{ $json[\"body\"]?.budget || $json[\"budget\"] || (JSON.parse($json[\"reply\"] || \"{}\").budget) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "services",
+              "displayName": "services",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "timeline",
+              "displayName": "timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        1344
+      ],
+      "id": "d68e7460-bf9c-4a17-adf3-96cb027237a0",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qckIhNfcSyREzZkP",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Vector DB",
+        "height": 416,
+        "width": 368,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        592,
+        224
+      ],
+      "typeVersion": 1,
+      "id": "a0dafcb5-c7c6-400f-a074-9ea15453df6f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log(\"RAW WEBHOOK DATA:\", JSON.stringify($json, null, 2));\nreturn $json;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        544
+      ],
+      "id": "6247b753-4c6e-4928-a186-607da759eff7",
+      "name": "Webhook Debug"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the incoming data\nconst body = $json[\"body\"] || {};\nconst type = body.type || \"chat\";\nconst sessionId = body.sessionId || \"direct_form_\" + Date.now();\n\n// Pass data to orchestrator\nreturn [\n  {\n    json: {\n      message: body.message || \"\",\n      type: type,\n      sessionId: sessionId, // Always provide a sessionId\n      // Include all contact form fields if they exist\n      name: body.name || \"\",\n      email: body.email || \"\",\n      company: body.company || \"\",\n      services: body.services || \"\",\n      timeline: body.timeline || \"\",\n      budget: body.budget || \"\",\n      // Add a flag to indicate this is a direct form submission\n      isDirectForm: type === \"contact_form\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2c44b828-f580-430a-bd52-bc8de774270d",
+      "name": "Data Preparer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Debug and prepare data for If1 node\nconsole.log(\"🔍 DATA REACHING CODE3:\", JSON.stringify($json, null, 2));\n\n// Extract the actual response (could be in output field or direct)\nconst response = $json[\"output\"] || $json;\n\n// If we have a contact form response, make it easily detectable\nif (response && response.intent === \"contact_form\") {\n    console.log(\"✅ CONTACT FORM DETECTED - preparing for processing\");\n    return [{\n        json: {\n            intent: \"contact_form\",\n            name: response.name || \"\",\n            email: response.email || \"\",\n            company: response.company || \"\",\n            services: response.services || \"\",\n            timeline: response.timeline || \"\",\n            budget: response.budget || \"\",\n            message: response.message || \"\",\n            // Include original body for direct form submissions\n            body: $json[\"body\"] || {}\n        }\n    }];\n}\n\n// Regular chat response - pass through as is\nconsole.log(\"💬 REGULAR CHAT RESPONSE - passing through\");\nreturn [$json];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        0
+      ],
+      "id": "5517340d-4e01-47d5-9a1f-28e787f0c61a",
+      "name": "Form/Chat Handler"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json[\"output\"] || $json[\"response\"] || $json;\nconsole.log(\"RAW DATA:\", JSON.stringify(response, null, 2));\n\n// If contact form, return it with intent at root level\nif (response && response.intent === \"contact_form\") {\n    console.log(\"✅ CONTACT FORM DETECTED\");\n    // Return the ENTIRE response object\n    return [{ json: response }];\n}\n\n// Regular chat response\nconsole.log(\"💬 CHAT RESPONSE\");\nreturn [{\n    json: {\n        reply: typeof response === 'string' ? response : \n              (response.text || response.output || JSON.stringify(response))\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        0
+      ],
+      "id": "36ccf0d3-aaf9-43c2-8484-c9414e29f8d1",
+      "name": "Response Formatter"
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log(\"🔍 DATA REACHING IF1:\", JSON.stringify($json, null, 2));\nconsole.log(\"🔍 intent value:\", $json[\"intent\"] || \"UNDEFINED\");\nreturn $json;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        0
+      ],
+      "id": "d8a20d3a-b5a5-4a8f-b5e7-35dc202e3c84",
+      "name": "Intent Debug Logger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed785083-47cc-42ee-a43a-d7aec699d78e",
+              "leftValue": "={{ JSON.parse($json.reply).intent || \"chat\" }}",
+              "rightValue": "contact_form",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "1c160a97-5ffe-4b6d-b043-0acd786715b1",
+      "name": "Check Intent (Form vs Chat)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Debug what we're about to send back\nconsole.log(\"Final response object:\", JSON.stringify($json, null, 2));\nreturn $json;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        16
+      ],
+      "id": "8ab1c2a5-7128-42c3-9b98-f5d1b4de80e3",
+      "name": "Final Response Debug"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1098efae-7bac-4586-920c-3bd17ca24fff",
+              "leftValue": "={{ $json[\"body\"][\"type\"] || \"chat\" }}",
+              "rightValue": "=contact_form",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        544
+      ],
+      "id": "b2c22624-9b34-4119-b220-df1ef73f490e",
+      "name": "💰 Credit Saver"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ORCHESTRATOR",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "ORCHESTRATOR",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ORCHESTRATOR": {
+      "main": [
+        [
+          {
+            "node": "Form/Chat Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "ORCHESTRATOR",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Mistral Cloud1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reranker Cohere": {
+      "ai_reranker": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_reranker",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assistant": {
+      "main": [
+        [
+          {
+            "node": "Webhook Debug",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Send email3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send email2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Debug": {
+      "main": [
+        [
+          {
+            "node": "💰 Credit Saver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Preparer": {
+      "main": [
+        [
+          {
+            "node": "ORCHESTRATOR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form/Chat Handler": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Formatter": {
+      "main": [
+        [
+          {
+            "node": "Intent Debug Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Debug Logger": {
+      "main": [
+        [
+          {
+            "node": "Check Intent (Form vs Chat)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Intent (Form vs Chat)": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Final Response Debug",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💰 Credit Saver": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Data Preparer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e681a128-be67-44d6-8440-d7d6683037e4",
+  "meta": {
+    "instanceId": "3252ac3992991f792cdf2b7d003981a9725b66eb2229b0884a2ae3a65ab7c885"
+  },
+  "id": "5gst7w63UNePBHbe",
+  "tags": []
+}
